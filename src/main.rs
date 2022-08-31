@@ -80,15 +80,11 @@ fn get_index_by_name(name: &str) -> usize {
 enum Command {
     #[command(description = "display this text.")]
     Help,
-    #[command(description = "handle a username.")]
-    Username(String),
-    #[command(description = "handle a username and an age.", parse_with = "split")]
-    UsernameAndAge { username: String, age: u8 },
-    #[command(description = "Chemicum")]
+    #[command(description = "Chemicums menu.")]
     Chemicum,
-    #[command(description = "Exactum")]
+    #[command(description = "Exactums menu")]
     Exactum,
-    #[command(description = "Physicum")]
+    #[command(description = "Physicums menu")]
     Physicum,
 }
 
@@ -100,16 +96,6 @@ async fn answer(
     match command {
         Command::Help => {
             bot.send_message(message.chat.id, Command::descriptions().to_string()).await?
-        }
-        Command::Username(username) => {
-            bot.send_message(message.chat.id, format!("Your username is @{username}.")).await?
-        }
-        Command::UsernameAndAge { username, age } => {
-            bot.send_message(
-                message.chat.id,
-                format!("Your username is @{username} and age is {age}."),
-            )
-            .await?
         }
         Command::Chemicum => {
             let data = get_restaurants().await?;
