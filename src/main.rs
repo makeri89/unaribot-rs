@@ -35,6 +35,7 @@ struct MenuList {
     data: Vec<Menu>,
 }
 
+#[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Restaurant {
     id: i32,
@@ -42,7 +43,6 @@ struct Restaurant {
     slug: String,
     permalink: String,
     address: String,
-    #[allow(non_camel_case_types)]
     menuData: MenuData,
 }
 
