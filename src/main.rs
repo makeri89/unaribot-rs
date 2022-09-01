@@ -1,3 +1,4 @@
+use chrono::offset;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use teloxide::{prelude::*, types::ParseMode, utils::command::BotCommands};
@@ -33,6 +34,7 @@ struct Menu {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MenuList {
     data: Vec<Menu>,
+    date: String,
 }
 
 #[allow(non_snake_case)]
@@ -172,13 +174,22 @@ async fn message_sender(
 ) -> Result<teloxide::prelude::Message, Box<dyn Error + Send + Sync>> {
     let data = get_restaurants().await?;
     let index = get_index_by_name(name);
-    let res = format_message(&data[index].menuData.menus[0]);
+    let today = offset::Local::today().format("%d.%m.");
+    let today = format!("{}", today);
+    let menu_index = get_menu_index_by_date(&data[index].menuData, &today);
+    let res = format_message(&data[index].menuData.menus[menu_index]);
     Ok(bot
         .send_message(message.chat.id, format!("{}", res))
         .parse_mode(ParseMode::MarkdownV2)
         .await?)
 }
 
+fn get_menu_index_by_date(data: &MenuData, date: &String) -> usize {
+    data.menus
+        .iter()
+        .position(|x| x.date.contains(date))
+        .unwrap()
+}
 fn format_message(data: &MenuList) -> String {
     let mut result = String::new();
     for menu in data.data.iter() {
