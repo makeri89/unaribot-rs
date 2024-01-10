@@ -67,71 +67,42 @@ async fn get_restaurants() -> Result<Vec<Restaurant>, reqwest::Error> {
     Ok(restaurants)
 }
 
-fn get_index_by_name(name: &str) -> usize {
-    match name {
-        "myohan" => 0,
-        "kaivopiha" => 1,
-        "wellterkko" => 2,
-        "wellkaisa" => 3,
-        "viikuna" => 4,
-        "sockom" => 5,
-        "rotunda" => 6,
-        "oliver" => 7,
-        "porthania" => 9,
-        "physicum" => 10,
-        "pescovege" => 11,
-        "olivia" => 12,
-        "metsatalo" => 13,
-        "meilahti" => 14,
-        "infokeskus" => 15,
-        "exactum" => 16,
-        "chemicum" => 17,
-        "portaali" => 19,
-        "biokeskus" => 10,
-        _ => 0,
-    }
-}
-
 #[derive(BotCommands, Clone)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
 enum Command {
     #[command(description = "display this text.")]
     Help,
-    #[command(description = "Chemicums menu.")]
+    #[command(description = "Chemicum menu.")]
     Chemicum,
-    #[command(description = "Exactums menu")]
+    #[command(description = "Exactum menu")]
     Exactum,
-    #[command(description = "Physicums menu")]
+    #[command(description = "Physicum menu")]
     Physicum,
-    #[command(description = "Kaivopihas menu")]
+    #[command(description = "Kaivopiha menu")]
     Kaivopiha,
-    #[command(description = "WELL Terkkos menu")]
-    WELLTerkko,
     #[command(description = "WELL Kaisas menu")]
     WELLKaisa,
-    #[command(description = "Viikunas menu")]
+    #[command(description = "Viikuna menu")]
     Viikuna,
-    #[command(description = "Sockoms menu")]
+    #[command(description = "Sockom menu")]
     Sockom,
-    #[command(description = "Rotundas menu")]
+    #[command(description = "Rotunda menu")]
     Rotunda,
-    #[command(description = "Olivers menu")]
-    Oliver,
-    #[command(description = "Porthanias menu")]
+    #[command(description = "Porthania menu")]
     Porthania,
-    #[command(description = "Pescoveges menu")]
+    #[command(description = "Topelias menu")]
     Pescovege,
-    #[command(description = "Olivias menu")]
+    #[command(description = "Olivia menu")]
     Olivia,
-    #[command(description = "Metsatalos menu")]
+    #[command(description = "Metsatalo menu")]
     Metsatalo,
-    #[command(description = "Meilahtis menu")]
+    #[command(description = "Meilahti menu")]
     Meilahti,
-    #[command(description = "Infokeskus' menu")]
+    #[command(description = "Infokeskus menu")]
     Infokeskus,
-    #[command(description = "Portaalis menu")]
+    #[command(description = "Portaali menu")]
     Portaali,
-    #[command(description = "Biokeskus' menu")]
+    #[command(description = "Biokeskus 3 menu")]
     Biokeskus,
 }
 
@@ -149,20 +120,18 @@ async fn answer(
         Command::Exactum => message_sender("exactum", message, bot).await?,
         Command::Physicum => message_sender("physicum", message, bot).await?,
         Command::Kaivopiha => message_sender("kaivopiha", message, bot).await?,
-        Command::WELLTerkko => message_sender("wellterkko", message, bot).await?,
-        Command::WELLKaisa => message_sender("wellkaisa", message, bot).await?,
+        Command::WELLKaisa => message_sender("well-kaisa-talo", message, bot).await?,
         Command::Viikuna => message_sender("viikuna", message, bot).await?,
         Command::Sockom => message_sender("sockom", message, bot).await?,
         Command::Rotunda => message_sender("rotunda", message, bot).await?,
-        Command::Oliver => message_sender("oliver", message, bot).await?,
         Command::Porthania => message_sender("porthania", message, bot).await?,
-        Command::Pescovege => message_sender("pescovege", message, bot).await?,
+        Command::Pescovege => message_sender("pesco-vege-topelias", message, bot).await?,
         Command::Olivia => message_sender("olivia", message, bot).await?,
         Command::Metsatalo => message_sender("metsatalo", message, bot).await?,
         Command::Meilahti => message_sender("meilahti", message, bot).await?,
         Command::Infokeskus => message_sender("infokeskus", message, bot).await?,
         Command::Portaali => message_sender("portaali", message, bot).await?,
-        Command::Biokeskus => message_sender("biokeskus", message, bot).await?,
+        Command::Biokeskus => message_sender("biokeskus-3", message, bot).await?,
     };
 
     Ok(())
@@ -174,15 +143,22 @@ async fn message_sender(
     bot: AutoSend<Bot>,
 ) -> Result<teloxide::prelude::Message, Box<dyn Error + Send + Sync>> {
     let data = get_restaurants().await?;
-    let index = get_index_by_name(name);
+    let restaurant_index = find_by_slug(&data, name);
+    let restaurant = &data[restaurant_index];
     let today = offset::Local::today().format("%d.%m.");
     let today = format!("{}", today);
-    let menu_index = get_menu_index_by_date(&data[index].menuData, &today);
-    let res = format_message(&data[index].menuData.menus[menu_index]);
+    let menu_index = get_menu_index_by_date(&restaurant.menuData, &today);
+    let res = format_message(&restaurant.menuData.menus[menu_index]);
     Ok(bot
         .send_message(message.chat.id, format!("{}", res))
         .parse_mode(ParseMode::MarkdownV2)
         .await?)
+}
+
+fn find_by_slug(data: &Vec<Restaurant>, rest_slug: &str) -> usize {
+    data.iter()
+        .position(|x| x.slug.contains(rest_slug))
+        .unwrap()
 }
 
 fn get_menu_index_by_date(data: &MenuData, date: &String) -> usize {
